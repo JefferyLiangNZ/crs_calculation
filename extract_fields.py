@@ -1,6 +1,9 @@
+from __future__ import generators, division, print_function
+
 import re
 import traceback
 import sys
+import logging
 
 match_dict = {
     'obn_cnt': r'Number of observations:\s+([\d\.]+)',
@@ -15,7 +18,6 @@ splitter = r'(ADJUSTMENT\s.*)'
 def extract_blocks(text):
 
     if text is None:
-        raise StopIteration
         return
 
     for matches in re.finditer(splitter, text, flags=re.M):
@@ -89,7 +91,7 @@ def extract_context_testblock(source):
         return re.findall(re.compile(match_pattern, re.M), source)
 
     except Exception as e:
-        print "\n(testblock not found) In extract_context_testblock:", source
+        logging.error("\n(testblock not found) In extract_context_testblock:"+ source)
         raise e
 
 def extract_context_testblock_title(source):
@@ -101,7 +103,7 @@ def extract_context_testblock_title(source):
         return (reg_version, rule_version_text, )
 
     except Exception as e:
-        print "\n(title not found) In extract_context_testblock_title:", source
+        logging.error("\n(title not found) In extract_context_testblock_title:"+ source)
         raise e
 
 def extract_context_testblock_title_regver(source):
@@ -131,18 +133,62 @@ def extract_context_testblock_ruleitem(source):
     values = re.split(re.compile(match_pattern), source)
     return values[1:]
 
+# Tested for 180 observations of which 2 failed
+# def extract_context_testblock_rulestat_cognition(source):
+#     # raw_input('source')    (?P<x>
+    
+#     match_pattern = r'Tested for\s(?P<SUM>\d+)\sobservation.*of which\s(?P<FAIL>\d+)\sfailed|\
+#     Test failed for.+\s(?P<SUM>\d+)\sobservations|\
+#     Test passed for.*\s(?P<SUM>\d+)\sobservations|\
+#     of\s(?P<SUM>\d+)\sobservations did not meet'
 
+#     result = re.search(re.compile(match_pattern), source)
+
+#     if result:
+#         if re.search(re.compile(match_pattern), source).groups()[3]:
+#             logging.debug('parsing {} '.format(source))
+
+#         filter(lambda x: bool(x), result.groups())[0]
+#         return filter(lambda x: bool(x), result.groups())[0]
 def extract_context_testblock_rulestat_cognition(source):
-    # raw_input('source')    
-    match_pattern = r'Tested for\s(\d+)\sobservation|Test failed for.+\s(\d+)\sobservations|Test passed for.*\s(\d+)\sobservations|of\s(\d+)\sobservations did not meet'
-    result = re.search(re.compile(match_pattern), source)
+    # raw_input('source')    (?P<x>
+    
+    match_patterns = [
+        r'Tested for\s(?P<SUM>\d+)\s\w+.*of which\s(?P<FAIL>\d+)\sfailed',
+        r'Test failed for\s(?P<FAIL>\d+)\sof\s(?P<SUM>\d+)\s\w+',
+        r'Test passed for.*\s(?P<SUM>\d+)\s\w+',
+        r'(?P<FAIL>\d+)\sof\s(?P<SUM>\d+)\s\w+ did not meet accuracy requirement',
+        r'(?P<PASS>\d+)\sof\s(?P<SUM>\d+)\s\w+ meet accuracy requirement'
+    ]
 
-    if result:
-        if re.search(re.compile(match_pattern), source).groups()[3]:
-            print '-->', source
+    matched_objects = filter(lambda x: bool(x), 
+        [ re.search(re.compile(pattern), source) for pattern in match_patterns ])
+    # print(matched_objects)
+    sum_cnt, fail_cnt, pass_cnt = 0, 0, 0
+    # result = re.search(re.compile(match_pattern), source)
+    if matched_objects:
+        try:
+            sum_cnt = int(matched_objects[0].group('SUM'))
+            if sum_cnt == 0:
+                logging.error("Cant deduct from test rule results because: " + source)
+                return ("0", "0", "0.0")
 
-        return filter(lambda x: bool(x), result.groups())[0]
+            if 'PASS' in matched_objects[0].groupdict() and matched_objects[0].group('PASS'):
+                pass_cnt = int(matched_objects[0].group('PASS'))
+                fail_cnt = sum_cnt - pass_cnt
 
+            if 'FAIL' in matched_objects[0].groupdict() and matched_objects[0].group('FAIL'):
+                fail_cnt = int(matched_objects[0].group('FAIL'))
+        except:
+            # logging.error("No match group for test result {}".format(source))
+            logging.error("matched {}".format(str(matched_objects[0].groupdict())))
+            logging.error("Cant deduct from test rule results because: " + source)
+
+
+        return ("%d" % fail_cnt, "%d" % sum_cnt, "%4.3f" % (100*fail_cnt/sum_cnt))
+    else:
+        logging.error("Exception from: extract_context_testblock_rulestat_cognition")
+        raise ValueError
 
 def extract_context_testblock_rulestat(source):
 
@@ -157,7 +203,7 @@ def extract_context_testblock_rulestat(source):
 
     except Exception as e:
 
-        print "\n(stats not found) In extract_context_testblock_rulestat:", source
+        logging.error("\n(stats not found) In extract_context_testblock_rulestat:"+ source)
         total_cnt = 0
         raise ValueError
 
@@ -176,8 +222,8 @@ def extract_testblock_ruleitem_proc(testrule_block, context):
     if testrule_block.find('of which') < 0:
 
         if testrule_block.find('not used') < 0 and testrule_block.find('not tested') < 0 and testrule_block.find('Test passed for ') < 0:
-            print 'Exception: ', testrule_block
-            print 'Context: ', repr(context)
+            logging.error('Exception: '+ testrule_block)
+            logging.error('Context: '+ repr(context))
             # raw_input('>>')
             pass
         return (None, None)

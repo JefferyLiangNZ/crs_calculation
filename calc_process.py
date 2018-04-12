@@ -1,42 +1,121 @@
-
-from collections import OrderedDict, namedtuple
-
-from extract_fields import match_dict
-
-from extract_fields import extract_metrics, extract_context, \
-    extract_context_testblock_title, \
-    extract_context_testblock, \
-    extract_testblock_ruleitem_proc, \
-    extract_context_testblock_rulestat
+from __future__ import absolute_import
 
 import re
 from StringIO import StringIO
+import logging
+from collections import ( OrderedDict, namedtuple )
+
+
+from extract_fields import  \
+(
+    match_dict,
+    extract_metrics, 
+    extract_context, 
+    extract_context_testblock_title, 
+    extract_context_testblock, 
+    extract_testblock_ruleitem_proc, 
+    extract_context_testblock_rulestat,
+    extract_context_testblock_rulestat_cognition
+)
+
 
 wac_wrk_chk_item = namedtuple('wac_wrk_chk', \
-    ['wrk_id', 'chi_code', 'exec_staq', 'result', 'ref_id', 'summary_txt'] + match_dict.keys())
+    ['wrk_id', 'chi_code', 'exec_stag', 'result', 'ref_id', 'summary_txt'] + match_dict.keys())
 
-wac_wrk_rule_test_item = namedtuple('wac_wrk_chk', \
+wac_wrk_rule_test_item = namedtuple('wac_wrk_rule_test_item', \
     ['reg_ver', 'reg_desc', 'rule_title', 'rule_desc', 'rule_block'])
 
-wac_rule_test_stats_item = namedtuple('wac_wrk_chk', \
-    ['chk_id', 'rule_id', 'obn_cnt', 'fail_cnt', 'ratio'])
+wac_rule_test_stats_item = namedtuple('wac_rule_test_stats_item', \
+    ['chk_id', 'rule_id', 'fail_cnt', 'obn_cnt', 'ratio'])
 
 skip_stats = {}
 
 test_rule_stats = {}
 
+
+
+
 class waca_base():
     def __init__(self):
         self.store = OrderedDict()
 
-    def output(self):
+    @staticmethod
+    def null_value_handler(data_dict):
+
+        for key in data_dict.copy().keys():
+            # print(key)
+            # print(data_dict[key])
+            # print('')
+            if data_dict[key] is None:
+                data_dict[key] = 'NULL'
+            if isinstance(data_dict[key], str) and data_dict[key] == '':
+                data_dict[key] = ' '
+
+    @staticmethod
+    def strip_trailing_leading_nonsense(source):
+        """
+            triming all trailing and leading = or line breaks
+            a better way could be regex in the future
+        """
+        source = re.sub(re.compile(r'(NOTES((.|\n)*))'), '', source)
+        if source.find('NOTES') > 0:
+            print source
+            raise Exception
+
+        """Test passed for all 122 observations"""
+        return source.strip().strip('=').strip()
+
+    @staticmethod
+    def escape_single_quotes(source):
+        # print repr(source), '-->'
+        return re.sub(re.compile('\''), '`', source)
+
+    def output(self, limit):
+        
         bb = StringIO()
+        cnt = 0
+
         for key, item in self.store.items():
-             bb.write('{},{}\n'.format(str(key), str(item)))
-        print 'output', len(self.store.keys())
+            
+            cnt += 1
+            if self.__class__.__name__ == 'wac_rule_test':
+                bb.write('{}, {}\n'.format(str(item[0]), str(item[1])))
+            else:
+                bb.write('{},{}\n'.format(str(key), str(item)))
+
+            if cnt > limit:
+                break
+
+
+        bb.write('output {} - {}'.format(len(self.store.keys()), self.__class__.__name__))
         return bb.getvalue()
 
+    def waca_sql_format(self):
+        raise Exception
+
+    def data_sqldump(self):
+
+        with open(self.TABLE+'.sql', 'w') as wfile:
+
+            round_up = 0
+            for row in self.data_export():
+
+                round_up = (round_up + 1) % 300
+                base = StringIO()
+                base.write('INSERT INTO waca.{}'.format(self.TABLE))
+                base.write(' values ({});\n'.format(row))
+                if row.find('NOTES') > 0:
+                    print row
+                    raise Exception
+                wfile.write(base.getvalue())
+                if round_up == 1:
+                    wfile.write('COMMIT;\n')
+
+
+
+
 class wac_rule_test_stats(waca_base):
+    TABLE = 'wac_test_rule_stats'
     def __init__(self):
         # super.__init__(self)
         waca_base.__init__(self)
@@ -44,25 +123,33 @@ class wac_rule_test_stats(waca_base):
         self.__init_seq = 29999
 
     def __next_key(self):
+
         self.__init_seq += 1
         return self.__init_seq
 
-
-    def append(self, chk_id, rule_id, obn_cnt, fail_cnt, ratio):
+    def append(self, chk_id, rule_id, fail_cnt, obn_cnt, ratio):
 
         store_key = self.__next_key()
-        print chk_id, 'append>>>>>>>>>>>>>>>>>>>>>>'
-
-        self.store[store_key] = wac_rule_test_stats_item(chk_id, rule_id, obn_cnt, fail_cnt, ratio)
-        print '++ + ', store_key, len(self.store.keys())
+        self.store[store_key] = wac_rule_test_stats_item(chk_id, rule_id, fail_cnt, obn_cnt, ratio)
+        # print '++ + ', store_key, len(self.store.keys())
         return store_key
 
+    def data_export(self):
+
+        for key, item in self.store.items():
+            data_dict = item._asdict()
+            data_dict.update({'id': key })
+            yield "{id}, {chk_id}, {rule_id}, {fail_cnt}, {obn_cnt}, {ratio}".format(**data_dict)
+
+        print(len(self.store))
 
 class wac_rule_test(waca_base):
+    TABLE = 'wac_test_rule'    
     def __init__(self):
         waca_base.__init__(self)
         self.__init_seq = 99
-        self.__unique_value_pool = {}        
+        self.__unique_value_pool = {}
+        self.__tablename__ = 'wac_rule_test_tbl'
 
     def __next_key(self):
         self.__init_seq += 1
@@ -81,11 +168,28 @@ class wac_rule_test(waca_base):
             store_key = self.__next_key()
             self.store[(reg_ver, reg_desc, rule_title, rule_desc)] = (store_key,   \
                 wac_wrk_rule_test_item(reg_ver=reg_ver, reg_desc=reg_desc, rule_title=rule_title, rule_desc=rule_desc, rule_block=rule_block))
-            print '++ + '*2, self.store[(reg_ver, reg_desc, rule_title, rule_desc)]
+            logging.debug('{}'.format(self.store[(reg_ver, reg_desc, rule_title, rule_desc)]))
             return store_key
 
+    def data_export(self):
+
+        for item in self.store.values():
+
+            key, rule_tuple = item
+            data_dict = rule_tuple._asdict()
+            data_dict.update({'id': key})
+
+            data_dict['rule_block'] = waca_base.strip_trailing_leading_nonsense(data_dict['rule_block'])
+            data_dict['rule_block'] = waca_base.escape_single_quotes(data_dict['rule_block'])
+
+            data_dict['reg_desc'] = waca_base.escape_single_quotes(data_dict['reg_desc'])
+
+            yield "'{id}', '{reg_ver}', '{rule_title}', '{reg_desc}', '{rule_desc}', '{rule_block}'".format(**data_dict)
+
+        print(len(self.store))
 
 class wac_wrk_chk(waca_base):
+    TABLE = 'wac_wrk_check_list'       
     # Specify the crs_check_entity namedtuple.
     def __init__(self):
         waca_base.__init__(self)        
@@ -132,6 +236,22 @@ class wac_wrk_chk(waca_base):
         # print store_key, store_item.wrk_id, store_item.chi_code, store_item.exec_staq, store_item.result, store_item.ref_id, store_item.obn_cnt, store_item.free_dg, ' --->'
         return store_key
 
+    def data_export(self):
+
+        for key, item in self.store.items():
+            data_dict = item._asdict()
+            data_dict.update({'id': key })
+            waca_base.null_value_handler(data_dict)
+            new_summary = waca_base.strip_trailing_leading_nonsense(data_dict['summary_txt'])
+            # print(new_summary)
+
+            data_dict['summary_txt'] = waca_base.escape_single_quotes(new_summary)
+            if data_dict['summary_txt'] == '':
+                data_dict['summary_txt'] = ' '
+            yield "{id}, {wrk_id}, '{chi_code}', '{exec_stag}', '{result}', {obn_cnt}, {prm_cnt}, {free_dg}, {std_err}, {ref_id}, '{summary_txt}' ".format(**data_dict)
+
+
+
 def main_handler(record, wrk_chk_obj, wrk_testrule_obj, wac_rule_test_stats_obj):
 
     source = record.summary_txt
@@ -166,43 +286,27 @@ def main_handler(record, wrk_chk_obj, wrk_testrule_obj, wac_rule_test_stats_obj)
         if not rule_title:
             # print '\n\n', rule_result_block
             # raw_input('>>')
-            print "skip:" #'{}->{}'.format(regulation_ver, testrule_block.replace('\n', '').replace('----', '-'))
+            logging.warn('Test rule skipped - because:{}->{}'.format(regulation_ver, testrule_block.replace('\n', '').replace('----', '-')))
             continue
 
         wrk_testrule_fk_id = wrk_testrule_obj.append(regulation_ver, regulartion_desc, rule_title, rule_descr, testrule_block[:240])
         # print wrk_testrule_fk_id, 'FK_ID', wrk_chk_fk_id
 
         try:
-            applied_cnt, total_cnt = extract_context_testblock_rulestat(testrule_block)
-            wac_rule_test_stats_obj.append(wrk_chk_fk_id, wrk_testrule_fk_id, applied_cnt, total_cnt, 0.0)
+            applied_cnt, total_cnt, ratio = extract_context_testblock_rulestat_cognition(testrule_block)
+            wac_rule_test_stats_obj.append(wrk_chk_fk_id, wrk_testrule_fk_id, applied_cnt, total_cnt, ratio)
         except ValueError:
-            print "VALUE=>", source
-            print "\n<=Value\n"
+            logging.error("Cant deduct from test rule results because: "+ source.replace('\n', ''))
             break
         except Exception as e:
             print e
 
-        print '\n\n', testrule_block, applied_cnt, total_cnt
-        # # print rule_title, rule_descr
-        # test_rule_stats.add((rule_title, rule_descr, regulation_ver, regulartion_desc))
+        logging.info('{}'.format(testrule_block.strip().strip('\n')))
 
     # all_test_rules = [ xitem.split('\n')[0] for xitem in extract_context_testblock(rule_result_block) ]
     # check_list_item = (metrics_block, regulation_ver, regulartion_desc, all_test_rules)
 
     # summary_blocks = list(extract_blocks(test_file))
-    # print '{} <-> {}'.format(cnt, len(check_list_items))
-    # print 'last: {} '.format(check_list_items[-1])
-    # print skip_stats
-
-    # for key, item in test_rule_stats.iteritems():
-    #     print "{:6d}|{:35s}|{:55s}|{:9s}|{}".format(item, key[0], key[1], key[2], key[3])
-
-    # return {'rule_dict': test_rule_stats.keys(), 'check_list': check_list_items}
-    
-
-
-
-    # print test_rule_stats
 
     '''
     for matches in summary_blocks:

@@ -9,7 +9,7 @@ def test_chklines_collection_four_items(rawtext_case1):
     assert len(result) 		== 4
     assert sample.wrk_id 	== '11096'
     assert sample.chi_code  == 'C184'
-    assert sample.exec_staq == 'AUTH'
+    assert sample.exec_stag == 'AUTH'
     assert sample.result	== 'UNTD'
     assert sample.ref_id	== '5195569'
     print ">>", repr(sample.summary_txt)
@@ -23,7 +23,7 @@ Node automatically rejected from the adjustment
     sample = result[-1]
     assert sample.wrk_id 	== '11046'
     assert sample.chi_code	== 'C184'
-    assert sample.exec_staq	== 'AUTH'
+    assert sample.exec_stag	== 'AUTH'
     assert sample.result	== 'UNTD'
     assert sample.ref_id	== '51955672'
     assert sample.summary_txt == ''

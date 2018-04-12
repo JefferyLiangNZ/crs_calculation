@@ -1,21 +1,27 @@
+from __future__ import absolute_import
+from __future__ import generators
 
 import re
 import os
 import collections
 import gzip
 
+
 # Specify the crs_check_entity namedtuple.
 ChkEntity = collections.namedtuple('crs_check_entity', \
-    ['wrk_id', 'chi_code', 'exec_staq', 'result', 'ref_id', 'summary_txt'])
+    ['wrk_id', 'chi_code', 'exec_stag', 'result', 'ref_id', 'summary_txt'])
 
-line_pattern = '(\d+\|C184\|\w+\|\w+\|\d+\|[^|]*\|)'
+
 
 
 def collect_unloaded_data(directory):
 
     for filename in os.listdir(directory):        
         if filename.endswith('.gz'):
-            
+
+            # if filename == 'crs_wrk_check_list8.unl.gz':
+            #     continue
+
             print "\n---loading %s ..." % filename
             fullpath = os.path.join(directory, filename)
 
@@ -52,15 +58,16 @@ Node automatically rejected from the adjustment
      >>> match_line(source)[1]
      
     """
+    line_pattern = '(\d+\|C184\|\w+\|\w+\|\d+\|[^|]*\|)'    
     cnt = 0
-    matched_rows = re.findall(line_pattern, source, re.M)
+    matched_rows = re.finditer(line_pattern, source, re.M)
     
     if matched_rows is None:
-        raise StopIteration
         return
         
-    for row in matched_rows:
+    for matched_sre_obj in matched_rows:
 
+        row = matched_sre_obj.groups()[0]
         items = re.sub(re.compile("\r\n", re.M), '', row).replace('\\', '').split('|')[:-1]
         try:
             cnt += 1
@@ -68,7 +75,7 @@ Node automatically rejected from the adjustment
         except Exception as e:
             print e
 
-    print "Collect c184 check item: {} out of {}".format(cnt, len(matched_rows)) 
+    print "Collect total {} c184 check results".format(cnt) 
 
 if __name__ == '__main__':
 
