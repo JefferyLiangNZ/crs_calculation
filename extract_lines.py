@@ -11,7 +11,8 @@ import gzip
 ChkEntity = collections.namedtuple('crs_check_entity', \
     ['wrk_id', 'chi_code', 'exec_stag', 'result', 'ref_id', 'summary_txt'])
 
-
+from StringIO import StringIO
+import logging
 
 
 def collect_unloaded_data(directory):
@@ -19,14 +20,33 @@ def collect_unloaded_data(directory):
     for filename in os.listdir(directory):        
         if filename.endswith('.gz'):
 
-            # if filename == 'crs_wrk_check_list8.unl.gz':
-            #     continue
+            if filename != 'crs_wrk_check_list2.unl.gz':
+                continue
 
             print "\n---loading %s ..." % filename
             fullpath = os.path.join(directory, filename)
 
-            with gzip.open(fullpath, 'rb') as f:
-                yield (filename, f.read())
+            with gzip.open(fullpath, 'rb') as input_data:
+                round_up = 0
+                overall_cnt =0
+                read_buff = StringIO()
+
+                line = input_data.readline()
+                while line:
+                    overall_cnt += 1
+                    round_up += 1
+
+                    read_buff.write(line)
+                    logging.info("Collect: " + repr(line.replace('\r', '').replace('\\', '')))
+                    
+                    if round_up > 5000 and re.search(re.compile(r'\d+\|\w+\|\w+\|\w+\|\d+\|\|'), line):
+                        logging.warn('passing {} lines to analysi program'.format(round_up))
+                        round_up = 0
+                        yield (filename, read_buff.getvalue())
+                        read_buff = StringIO()
+                    line = input_data.readline()
+                logging.warn('total number: {}'.format(overall_cnt))
+
 
         
 def chklines_collection(source):
@@ -57,6 +77,8 @@ Node automatically rejected from the adjustment
      4
      >>> match_line(source)[1]
      
+
+     C182, C183, C185
     """
     line_pattern = '(\d+\|C184\|\w+\|\w+\|\d+\|[^|]*\|)'    
     cnt = 0
@@ -75,7 +97,7 @@ Node automatically rejected from the adjustment
         except Exception as e:
             print e
 
-    print "Collect total {} c184 check results".format(cnt) 
+    # print "Collect total {} c184 check results".format(cnt) 
 
 if __name__ == '__main__':
 
@@ -83,14 +105,27 @@ if __name__ == '__main__':
     directory = './custom'    
     files_content_collection = collect_unloaded_data(directory)
     
+    verify_cnt = 0
+
     with open('temp_chk_results.txt', 'w') as temp_write_object:
         for file_name, file_content in files_content_collection:
-            for item in chklines_collection(file_content):
-                if item.summary_txt.find('=') > 0:
-                    temp_write_object.write(item.summary_txt + '\n')
+                verify_cnt += file_content.count('\n')
+                # print file_name, file_content.count('\n')
+                # print file_content[-700:].replace('\r', '')
+                # print 
                 
+            # for item in chklines_collection(file_content):
+            #     if item.summary_txt.find('=') > 0:
+            #         temp_write_object.write(item.summary_txt + '\n')
+            
+    print verify_cnt, "FINISH"
+
             # if file_name == 'crs_wrk_check_list7.unl.gz':
             #     break
+
+
+
+
 """
 
 if __name__ == '__main__':

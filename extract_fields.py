@@ -38,11 +38,23 @@ def extract_metrics(source):
     return result_dict
 
 def extract_context(source):
-    processed = source.replace('\r', '').replace('=', '')
+
     """ 
         use the full result text of a test record, which is the same as extract_metrics 
         extract the rule test text description, return as the paragraph below 
+
+        INPUT
         ---
+
+        ==============================================================================
+        ADJUSTMENT SUMMARY
+        ==============================================================================
+
+        Number of observations:           93
+
+        ==============================================================================
+        SUMMARY OF REGULATION TESTS
+        ==============================================================================
 
         Testing regulations: 1998 Survey regulations for class 3 surveys
 
@@ -55,22 +67,27 @@ def extract_context(source):
            The worst failures are:
               Misclose on ellipsoidal distance (length 43.87) is 1.4 times tolerance
                   Obs is from IR V DP 82633 (id 37822117) to Node ID 24091110 (id 24091110)
-              Misclose on projection bearing (bearing 279 57 00) is 1.2 times tolerance
-                  Obs is from IR V DP 82633 (id 37822117) to Node ID 23627670 (id 23627670)
+        ---
 
-        Test: Reg 28 and 26.2.c.iii: Misclose of obs from boundary marks to origins
-           Tested for 12 observations of which 0 failed
-           All observations were better than 0.16 times allowable misclose
+        OUTPUT (extracting the summary of regulation test)
+        ---
+        Testing regulations: 1998 Survey regulations for class 3 surveys
 
-        Test: Reg 28 and 26.2.c.iv: Misclose of obs between witness/traverse/origin marks
-           Tested for 86 observations of which 5 failed
+        Test: Reg 28 and 26.2.c.i: Misclose of obs between boundary marks
+           Tested for 78 observations of which 0 failed
+           All observations were better than 0.51 times allowable misclose
+
+        Test: Reg 28 and 26.2.c.ii: Misclose of obs from boundary marks to witness marks
+           Tested for 52 observations of which 2 failed
            The worst failures are:
-              Misclose on projection bearing (bearing 359 40 00) is 2.5 times tolerance
-                  Obs is from IT IX DP 7383 (id 555729) to 33 (Mairaki SD) (id 36738901)
+              Misclose on ellipsoidal distance (length 43.87) is 1.4 times tolerance
+                  Obs is from IR V DP 82633 (id 37822117) to Node ID 24091110 (id 24091110)
         ---
 
     """
-
+    # trim out the leading linebreaks and '=' character
+    processed = source.replace('\r', '').replace('=', '')
+    
     match_pattern = r'(?:SUMMARY OF REGULATION TESTS)'
     matched_groups = re.split(re.compile(match_pattern, re.M), processed, 6)
 
@@ -78,10 +95,13 @@ def extract_context(source):
     # print matched_items
 
     if matched_items:
+        if len(matched_items) > 1:
+            logging.warn('Multiple regulation blocks are found, but we only take the first block into account')
+
         return matched_items[0]
     else:
         # 'No testing rules section get matched, so only a ERROR SUMMARY'
-        pass
+        logging.warn('No regulation blocks, skip.')
 
 
 def extract_context_testblock(source):

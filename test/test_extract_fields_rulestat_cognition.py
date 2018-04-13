@@ -5,7 +5,30 @@ import pytest
 from extract_fields import extract_context_testblock_rulestat_cognition
 import re
 
+"""
+#################################3
 
+       602    2 observations could not be tested (rejected from adjustment)
+     16380    2 observations were not tested (rejected from adjustment)
+      1826    2 vectors could not be tested (rejected from adjustment)
+      3181    Test achieved required 2.2% pass rate
+      4126    Test did not achieve 2.2% pass rate
+     93674    Tested at 2 marks of which 2 failed
+    808027    Tested for 2 observations of which 2 failed
+    317093    Tested for 2 vectors of which 2 failed
+      3618    Test failed for 2 of 2 applicable marks
+      2040    Test failed for 2 of 2 marks
+      5701    Test failed for 2 of 2 observations
+      1119    Test failed for 2 of 2 vectors
+      6992    Test passed for 2 marks
+     11841    Test passed for all 2 applicable marks
+    270755    Test passed for all 2 observations
+    135400    Test passed for all 2 vectors
+    490427    This test was not used in the survey
+
+
+#########################################################
+"""
 # Tested for 180 observations of which 2 failed
     # if result:
     #     if re.search(re.compile(match_pattern), source).groups()[3]:
@@ -43,6 +66,12 @@ samplerule_stats = {
     178 of 180 observations meet accuracy requirement""", 
         ('2', '180', '1.111')
     ),
+
+    'Test passed for 0 marks':
+    ("""Test: Rule 3.6 and 7.3.2a: Boundary mark defined by survey requires a witness mark within 150 m
+    Test passed for 0 marks""",
+        ('0', '0', '100')
+    )
 
 
 }
