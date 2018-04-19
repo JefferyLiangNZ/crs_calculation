@@ -1,0 +1,170 @@
+2073|11249|C184|AUTH|FAIL|762|244|518|116.69|8608666|
+==============================================================================
+ADJUSTMENT SUMMARY
+==============================================================================
+
+Number of observations:          762
+
+Number of parameters:            244
+
+Degrees of freedom:              518
+
+Standard error of unit weight:   116.69
+
+==============================================================================
+SUMMARY OF REGULATION TESTS
+==============================================================================
+
+Testing regulations: Information only - the Surveyor-General`s Rules 2002/2 do not apply to this survey
+
+Test: Reg 28 and 26.2.b.i: Misclose of obs between boundary marks
+   Tested for 24 observations of which 19 failed
+   The worst failures are:
+      Misclose on projection bearing (bearing 5 21 00) is 11.0 times tolerance
+          Obs is from Node ID 22216548 (id 22216548) to Node ID 21866701 (id 21866701)
+      Misclose on projection bearing (bearing 192 23 00) is 10.8 times tolerance
+          Obs is from PEG DP 26087 (id 41576119) to PEG DP 26087 (id 41576118)
+      Misclose on ellipsoidal distance (length 42.13) is 10.4 times tolerance
+          Obs is from PEG DP 26087 (id 41576117) to PEG DP 26087 (id 41576116)
+      Misclose on projection bearing (bearing 207 44 20) is 8.3 times tolerance
+          Obs is from PEG DP 26087 (id 41576117) to PEG DP 26087 (id 41576116)
+      Misclose on projection bearing (bearing 13 00 50) is 7.6 times tolerance
+          Obs is from Node ID 22300464 (id 22300464) to Node ID 22279335 (id 22279335)
+      Misclose on ellipsoidal distance (length 27.27) is 7.1 times tolerance
+          Obs is from Node ID 21866701 (id 21866701) to Node ID 22300464 (id 22300464)
+      Misclose on ellipsoidal distance (length 59.93) is 6.1 times tolerance
+          Obs is from Node ID 22300464 (id 22300464) to Node ID 22279335 (id 22279335)
+      Misclose on ellipsoidal distance (length 41.99) is 3.2 times tolerance
+          Obs is from PEG DP 26087 (id 41576116) to PEG DP 26087 (id 41576115)
+      Misclose on ellipsoidal distance (length 81.76) is 3.0 times tolerance
+          Obs is from Node ID 22279335 (id 22279335) to Node ID 21887431 (id 21887431)
+      Misclose on projection bearing (bearing 90 00 50) is 2.9 times tolerance
+          Obs is from Node ID 22279335 (id 22279335) to Node ID 21887431 (id 21887431)
+
+Test: Reg 28 and 26.2.b.ii: Misclose of obs from boundary marks to witness marks
+   Tested for 26 observations of which 21 failed
+   The worst failures are:
+      Misclose on projection bearing (bearing 238 53 30) is 22.3 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to Node ID 22300464 (id 22300464)
+      Misclose on ellipsoidal distance (length 67.90) is 18.4 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to Node ID 22300464 (id 22300464)
+      Misclose on projection bearing (bearing 270 41 30) is 9.9 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to Node ID 22279335 (id 22279335)
+      Misclose on ellipsoidal distance (length 46.83) is 9.0 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to Node ID 21866701 (id 21866701)
+      Misclose on ellipsoidal distance (length 111.11) is 8.5 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to Node ID 22300464 (id 22300464)
+      Misclose on projection bearing (bearing 196 13 30) is 7.8 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to PEG DP 26087 (id 41576119)
+      Misclose on ellipsoidal distance (length 48.00) is 6.8 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to PEG DP 26087 (id 41576117)
+      Misclose on projection bearing (bearing 214 02 20) is 6.7 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to PEG DP 26087 (id 41576117)
+      Misclose on ellipsoidal distance (length 44.93) is 6.6 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to PEG DP 26087 (id 41576116)
+      Misclose on ellipsoidal distance (length 81.64) is 6.2 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to Node ID 22279335 (id 22279335)
+
+Test: Reg 28 and 26.2.b.iii: Misclose of obs from boundary marks to origins
+   Tested for 2 observations of which 2 failed
+   The worst failures are:
+      Misclose on projection bearing (bearing 302 49 20) is 28.3 times tolerance
+          Obs is from IS SO 15356 (id 41576110) to Node ID 22279335 (id 22279335)
+      Misclose on ellipsoidal distance (length 247.68) is 26.6 times tolerance
+          Obs is from IS SO 15356 (id 41576110) to Node ID 22279335 (id 22279335)
+
+Test: Reg 28 and 26.2.b.iv: Misclose of obs between witness/traverse/origin marks
+   Tested for 28 observations of which 22 failed
+   The worst failures are:
+      Misclose on projection bearing (bearing 125 04 30) is 251.0 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to IT II SO 19845 (id 39979316)
+      Misclose on projection bearing (bearing 133 09 00) is 209.6 times tolerance
+          Obs is from IT II SO 19845 (id 39979316) to IT I SO 19845 (id 39979315)
+      Misclose on projection bearing (bearing 235 22 50) is 146.1 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to XX 17 (id 36746100)
+      Misclose on ellipsoidal distance (length 38.64) is 101.3 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to IT II SO 19845 (id 39979316)
+      Misclose on projection bearing (bearing 133 43 10) is 86.4 times tolerance
+          Obs is from IT I SO 19845 (id 39979315) to H NO 2 (id 36769919)
+      Misclose on ellipsoidal distance (length 61.72) is 83.5 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to XX 17 (id 36746100)
+      Misclose on projection bearing (bearing 12 31 40) is 70.4 times tolerance
+          Obs is from IT II DP 26087 (id 41576113) to IT III DP 26087 (id 41576112)
+      Misclose on ellipsoidal distance (length 134.70) is 56.6 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to IT IV DP 26087 (id 41576111)
+      Misclose on projection bearing (bearing 28 43 40) is 51.0 times tolerance
+          Obs is from IT III DP 26087 (id 41576112) to IT IV DP 26087 (id 41576111)
+      Misclose on ellipsoidal distance (length 107.84) is 50.7 times tolerance
+          Obs is from IT IV DP 26087 (id 41576111) to XX 17 (id 36746100)
+|
+2074|11250|C184|AUTH|PASS|1002|345|657|3.88|3864497|
+==============================================================================
+ADJUSTMENT SUMMARY
+==============================================================================
+
+Number of observations:         1002
+
+Number of parameters:            345
+
+Degrees of freedom:              657
+
+Standard error of unit weight:     3.88
+
+Note: 18 parameters fixed automatically to avoid singularity
+
+==============================================================================
+SUMMARY OF REGULATION TESTS
+==============================================================================
+
+Testing regulations: Information only - the 1998 survey regs do not apply to this survey
+
+Test: Reg 28 and 26.2.b.i: Misclose of obs between boundary marks
+   Tested for 36 observations of which 0 failed
+   All observations were better than 0.08 times allowable misclose
+
+Test: Reg 28 and 26.2.b.ii: Misclose of obs from boundary marks to witness marks
+   Tested for 32 observations of which 0 failed
+   All observations were better than 0.06 times allowable misclose
+
+Test: Reg 28 and 26.2.b.iii: Misclose of obs from boundary marks to origins
+   Tested for 12 observations of which 0 failed
+   All observations were better than 0.07 times allowable misclose
+
+Test: Reg 28 and 26.2.b.iv: Misclose of obs between witness/traverse/origin marks
+   Tested for 18 observations of which 0 failed
+   All observations were better than 0.27 times allowable misclose
+|
+2075|11251|C184|AUTH|PASS|31|31|0|1.00|8612454|
+==============================================================================
+ ADJUSTMENT SUMMARY
+==============================================================================
+
+Number of observations:           31
+
+Number of parameters:             31
+
+Degrees of freedom:                0
+
+Standard error of unit weight:     1.00
+
+Note: 31 parameters fixed automatically to avoid singularity
+
+==============================================================================
+SUMMARY OF REGULATION TESTS
+==============================================================================
+
+Testing regulations: Information only - the Surveyor-General`s Rules 2002/2 do not apply to this survey
+
+Test: Reg 28 and 26.2.c.i: Misclose of obs between boundary marks
+   18 observations were not tested (rejected from adjustment)
+
+Test: Reg 28 and 26.2.c.ii: Misclose of obs from boundary marks to witness marks
+   6 observations were not tested (rejected from adjustment)
+
+Test: Reg 28 and 26.2.c.iii: Misclose of obs from boundary marks to origins
+   2 observations were not tested (rejected from adjustment)
+
+Test: Reg 28 and 26.2.c.iv: Misclose of obs between witness/traverse/origin marks
+   12 observations were not tested (rejected from adjustment)
+|
+ 2077|11253|C184|AUTH|UNTD|NULL|NULL|NULL|NULL|8595863||

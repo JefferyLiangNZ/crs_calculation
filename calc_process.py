@@ -1,19 +1,28 @@
 from __future__ import absolute_import
 
+import sys
 import re
 from StringIO import StringIO
 import logging
+
 from collections import ( OrderedDict, namedtuple )
+from collections import deque
+import functools
+
 import copy
+import argparse
 
 from extract_fields import  \
 (
-    match_dict,
+    metrics_dict,
     extract_metrics, 
+    
     extract_context, 
-    extract_context_testblock_title, 
+    extract_context_regtest_title,
+    extract_context_regtest_block,
+
     extract_context_testblock, 
-    extract_testblock_ruleitem_proc, 
+    extract_context_testblock_rule_recognizer, 
     extract_context_testblock_rulestat,
     extract_context_testblock_rulestat_cognition,
     extract_context_testblock_rulestat_error
@@ -21,7 +30,7 @@ from extract_fields import  \
 
 
 wac_wrk_chk_item = namedtuple('wac_wrk_chk', \
-    ['wrk_id', 'chi_code', 'exec_stag', 'result', 'ref_id', 'summary_txt'] + match_dict.keys())
+    ['wrk_id', 'chi_code', 'exec_stag', 'result', 'ref_id', 'summary_txt'] + metrics_dict.keys())
 
 wac_wrk_rule_test_item = namedtuple('wac_wrk_rule_test_item', \
     ['reg_ver', 'reg_desc', 'rule_title', 'rule_desc', 'rule_block'])
@@ -29,9 +38,9 @@ wac_wrk_rule_test_item = namedtuple('wac_wrk_rule_test_item', \
 wac_rule_test_stats_item = namedtuple('wac_rule_test_stats_item', \
     ['chk_id', 'rule_id', 'fail_cnt', 'obn_cnt', 'ratio', 'error'])
 
-skip_stats = {}
+# skip_stats = {}
 
-test_rule_stats = {}
+# test_rule_stats = {}
 
 
 class waca_base():
@@ -49,6 +58,9 @@ class waca_base():
             if isinstance(data_dict[key], str) and data_dict[key] == '':
                 data_dict[key] = ' '
 
+    @property
+    def size(self):
+        return len(self.store)
 
     @staticmethod
     def strip_trailing_leading_nonsense(source):
@@ -115,10 +127,7 @@ class waca_base():
                     base = StringIO()
                 row_cnt += 1
 
-            print base.getvalue()[:100]
-
             wfile.write(waca_base.waca_sql_boilplate(self.TABLE, base.getvalue(), row_cnt))
-
 
 
 class wac_rule_test_stats(waca_base):
@@ -140,7 +149,6 @@ class wac_rule_test_stats(waca_base):
 
         store_key = self.__next_key()
         self.store[store_key] = wac_rule_test_stats_item(chk_id, rule_id, fail_cnt, obn_cnt, ratio, error)
-        # print '++ + ', store_key, len(self.store.keys())
         return store_key
 
     def data_export(self):
@@ -151,7 +159,6 @@ class wac_rule_test_stats(waca_base):
             waca_base.null_value_handler(data_dict)
             yield "{id}, {chk_id}, {rule_id}, {fail_cnt}, {obn_cnt}, {ratio}, {error}".format(**data_dict)
 
-        print(len(self.store))
 
 class wac_rule_test(waca_base):
     TABLE = 'wac_test_rule'    
@@ -168,10 +175,6 @@ class wac_rule_test(waca_base):
     def append(self, reg_ver, reg_desc, rule_title, rule_desc, rule_block):
 
         if (reg_ver, reg_desc, rule_title, rule_desc) in self.store:
-            # print "===>Reuse : {:9s} {:25s} {:8s} {}".format(reg_ver, reg_desc, rule_title, rule_desc), \
-            # '==>Match{}'.format(self.store[(reg_ver, reg_desc, rule_title, rule_desc)][0]) 
-            # print self.store[(reg_ver, reg_desc, rule_title, rule_desc)][1], "\n<==rule_context"
-
             return self.store[(reg_ver, reg_desc, rule_title, rule_desc)][0]
         else:
             store_key = self.__next_key()
@@ -191,22 +194,25 @@ class wac_rule_test(waca_base):
             data_dict['rule_block'] = waca_base.strip_trailing_leading_nonsense(data_dict['rule_block'])
             data_dict['rule_block'] = waca_base.escape_single_quotes(data_dict['rule_block'])
             data_dict['reg_desc'] = waca_base.escape_single_quotes(data_dict['reg_desc'])
-
             yield "'{id}', '{reg_ver}', '{rule_title}', '{reg_desc}', '{rule_desc}', '{rule_block}'".format(**data_dict)
 
-        print(len(self.store))
 
 class wac_wrk_chk(waca_base):
     TABLE = 'wac_wrk_check_list'
-    # Specify the crs_check_entity namedtuple.
+
+
     def __init__(self):
         waca_base.__init__(self)        
-        # self.store    = OrderedDict()
         self.__init_seq = 1999
         self.__ref_id_pool = {}
 
+        # sql_fn is responsible for formating the 'INSERT XXX' query
         sql_fn = functools.partial(waca_base.waca_sql_boilplate, self.TABLE)
         self.export = data_exporter(self.TABLE, sql_fn)
+
+    @property
+    def size(self):
+        return self.export.size
 
     def __next_key(self):
         self.__init_seq += 1
@@ -231,12 +237,9 @@ class wac_wrk_chk(waca_base):
         metrics = extract_metrics(record.summary_txt)
 
         if metrics:
-            base = metrics.copy()
-            base.update(record._asdict())
             try:
-                # self.store[store_key] = wac_wrk_chk_item(**base)
-                # self.store[store_key] = 1
-                pass
+                base = metrics.copy()
+                base.update(record._asdict())
             except:
                 print metrics
                 print base
@@ -244,9 +247,6 @@ class wac_wrk_chk(waca_base):
             base = {'obn_cnt': None, 'prm_cnt': None, 'free_dg': None, 'std_err':None}
             base.update(record._asdict())
             base['summary_txt'] = base['summary_txt'][:7000]
-            # self.store[store_key] = wac_wrk_chk_item(**base)
-            # self.store[store_key]= 1
-
 
         store_item = copy.copy(wac_wrk_chk_item(**base))
         store_item_dict = store_item._asdict()
@@ -254,15 +254,12 @@ class wac_wrk_chk(waca_base):
 
         waca_base.null_value_handler(store_item_dict)
         new_summary = waca_base.strip_trailing_leading_nonsense(store_item_dict['summary_txt'])
-        # print(new_summary)
 
         store_item_dict['summary_txt'] = waca_base.escape_single_quotes(new_summary)
         if store_item_dict['summary_txt'] == '':
             store_item_dict['summary_txt'] = ' '
 
-        # print(str(store_item_dict))
         self.export.add(store_item_dict)
-        # print store_key, store_item.wrk_id, store_item.chi_code, store_item.exec_staq, store_item.result, store_item.ref_id, store_item.obn_cnt, store_item.free_dg, ' --->'
         return store_key
 
     def finish(self):
@@ -282,124 +279,98 @@ class wac_wrk_chk(waca_base):
                 data_dict['summary_txt'] = ' '
             yield "{id}, {wrk_id}, '{chi_code}', '{exec_stag}', '{result}', {obn_cnt}, {prm_cnt}, {free_dg}, {std_err}, {ref_id}, {summary_txt}".format(**data_dict)
 
-from collections import deque
-import functools
-
 
 class data_exporter(object):
-    def __init__(self, table_name, func, size = 500):
+    def __init__(self, table_name, sql_writer, size = 500):
 
-        self.__container__ = deque(maxlen= size + 10)
+        self.__container__ = deque(maxlen = size+10)
         self.max_size = size
         self.dat_filename = table_name + '.sql'
-        self.func = func
+        self.sql_writer = sql_writer
         self.sum_cnt = 0
 
         with open(self.dat_filename, 'w') as wfile:
-            wfile.write('truncate table waca{} cascade;\n'.format(table_name))
+            wfile.write('truncate table waca.{} cascade;\n'.format(table_name))
 
     def add(self, elem):
         self.sum_cnt += 1
         self.__container__.append(elem)
         if len(self.__container__) >= self.max_size:
             self._data_export(self.sum_cnt)
-            # self._sql_export()
 
+    @property
+    def size(self):
+        return self.sum_cnt
 
     def _data_export(self, count):
 
-        data_tuples_str = StringIO()
+        data_tuples = []
         # print("FILENAME:{}>>{}".format(self.dat_filename, count))
 
         while len(self.__container__):
             data_dict = self.__container__.popleft()
-            # waca_base.null_value_handler(data_dict)
-            # new_summary = waca_base.strip_trailing_leading_nonsense(data_dict['summary_txt'])
+            formatted = (
+                "({id}, {wrk_id}, '{chi_code}', '{exec_stag}',"
+                " '{result}', {obn_cnt}," 
+                "{prm_cnt}, {free_dg}, {std_err}, {ref_id}, "
+                "'{summary_txt}')"
+            ).format(**data_dict)
 
-            # data_dict['summary_txt'] = waca_base.escape_single_quotes(new_summary)
-            # if data_dict['summary_txt'] == '':
-            #     data_dict['summary_txt'] = ' '
-            formatted = "({id}, {wrk_id}, '{chi_code}', '{exec_stag}', '{result}', {obn_cnt}, \
-{prm_cnt}, {free_dg}, {std_err}, {ref_id}, '{summary_txt}'), \n".format(**data_dict)
-            data_tuples_str.write(formatted)
+            data_tuples.append(formatted)
 
         with open(self.dat_filename, 'a') as wfile:
             wfile.write(
-                self.func(
-                    data_tuples_str.getvalue().strip(',\n '), 
+                self.sql_writer(
+                    ', \n'.join(data_tuples), 
                     count-1
                 )
             )
 
-        # print(data_tuples_str.getvalue().strip(',\n '))
-        # print("\n\n\n")
-
-
-
-    # def _sql_export(self):
-    #     data_tuples_str = StringIO()
-
     def finish(self):
         self._data_export(self.sum_cnt)
-        # self.sql_export(sql_filename) 
 
 
-# def main_handler(record, wrk_chk_obj_append, wrk_testrule_obj_append, wac_rule_test_stats_obj_append):
 def main_handler(record, 
-                 wac_wrk_check_list_append, 
-                 wac_test_rule_append, 
-                 wac_test_rule_stats_append):
+                 wac_wrk_check_list_append_fn, 
+                 wac_test_rule_append_fn, 
+                 wac_test_rule_stats_append_fn):
 
-    source = record.summary_txt
-    source = re.sub(re.compile('NOTES(.|\n)+', re.M), '', source)
+    # source = re.sub(re.compile('NOTES(.|\n)+', re.M), '', source)
+    wrk_chk_fk_id = wac_wrk_check_list_append_fn(record)
+    rule_result_block = extract_context(record.summary_txt)
 
-    test_rule_stats = set()
-
-    wrk_chk_fk_id = wac_wrk_check_list_append(record)
-    # metrics_block = extract_metrics(source)
-    # print metrics_block
-    
-    rule_result_block = extract_context(source)
-
-    if rule_result_block is None:
-        skip_stats['rule_result_block'] = skip_stats.get('rule_result_block', 0) + 1
+    if not rule_result_block:
         return
 
-    # print rule_result_block.split('\n')[0]
-    regulation_ver, regulartion_desc = extract_context_testblock_title(rule_result_block)
-
-    for testrule_block in extract_context_testblock(rule_result_block+'\n'):
+    regulation_year_context = ''
+    for rule_result_chain_block in extract_context_regtest_block(rule_result_block):
         
-        # print testrule_block
-        rule_title, rule_descr = extract_testblock_ruleitem_proc(testrule_block, rule_result_block)
+        regulation_ver, regulartion_desc = \
+            extract_context_regtest_title(rule_result_chain_block, regulation_year_context)
 
-        # if not rule_title:
-        #     logging.warn('Test rule skipped - because:{}->{}'.format(regulation_ver, testrule_block.replace('\n', '').replace('----', '-')))
-        #     continue
-
-        wrk_testrule_fk_id = wac_test_rule_append(regulation_ver, regulartion_desc, rule_title, rule_descr, testrule_block[:240])
-        # print wrk_testrule_fk_id, 'FK_ID', wrk_chk_fk_id
-
-        try:
-            applied_cnt, total_cnt, ratio = extract_context_testblock_rulestat_cognition(testrule_block)
-            err_bound = extract_context_testblock_rulestat_error(testrule_block)
-            wac_test_rule_stats_append(wrk_chk_fk_id, wrk_testrule_fk_id, applied_cnt, total_cnt, ratio, err_bound)
+        regulation_year_context = regulation_ver.split('-')[0] \
+            if regulation_ver else regulation_year_context
         
-        except ValueError:
-            logging.error("Cant deduct from test rule results because: "+ source.replace('\n', ''))
-            break
-        except Exception as e:
-            print e
+        for testrule_block in extract_context_testblock(rule_result_chain_block+'\n'):
+            
+            # print testrule_block
+            rule_title, rule_descr = extract_context_testblock_rule_recognizer(testrule_block, rule_result_chain_block)
+            wrk_testrule_fk_id = wac_test_rule_append_fn(regulation_ver, regulartion_desc, rule_title, rule_descr, testrule_block)
 
-        logging.info('{}'.format(testrule_block.strip().strip('\n')))
+            try:
+                applied_cnt, total_cnt, ratio = extract_context_testblock_rulestat_cognition(testrule_block)
+                err_bound = extract_context_testblock_rulestat_error(testrule_block)
+                wac_test_rule_stats_append_fn(wrk_chk_fk_id, wrk_testrule_fk_id, applied_cnt, total_cnt, ratio, err_bound)           
+            except ValueError:
+                logging.error("Cant deduct from test rule results because: "+ source)
+                break
+            except Exception as e:
+                print e
 
-    # all_test_rules = [ xitem.split('\n')[0] for xitem in extract_context_testblock(rule_result_block) ]
-    # check_list_item = (metrics_block, regulation_ver, regulartion_desc, all_test_rules)
-
-    # summary_blocks = list(extract_blocks(test_file))
+            logging.info('{}'.format(testrule_block.strip('\n ')))
 
 
-if __name__ == '__main__':
+def ctest_extract_context(source):
 
     test_file = 'temp_chk_results.txt'
     with open(test_file, 'r') as rfile:
@@ -408,6 +379,48 @@ if __name__ == '__main__':
         check_list_items = []
 
         for block in extract_blocks(text):
-
             cnt += 1
             summary_handler(block)
+
+
+def ctest_main_handler():
+
+    from conftest import (SAMPLE_A, SAMPLE_B)
+    #mocked input for the main_handler
+    record_A = wac_wrk_chk_item(1, '2', '3', '4', 5, SAMPLE_A, 11, 12, 13, '0.1')
+    record_B = wac_wrk_chk_item(1, '1', '1', '1', 1, SAMPLE_B, 0, 0, 0, '0')
+
+    def f1(*args):
+        print('f1 get called with: \n' + str(args[0]._asdict()))
+
+    def f2(*args):
+        print('\n\n>>f2 get called with: \n' + ';\n'.join([str(item) for item in args]) + ';')
+
+    def f3(*args):
+        print('\n\n>>>>f3 get called with: \n' + ';  '.join([str(item) for item in args]))
+
+    print(''.join(['\n\n', 'record_A ', '+'*28 + '\n\n']))
+    main_handler(record_A, f1, f2, f3)
+
+    print(''.join(['\n\n', 'record_B ', '+'*28 + '\n\n']))
+    main_handler(record_B, f1, f2, f3)
+
+
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-t', 
+                        dest='tests', 
+                        default=['main_handler'],
+                        help='run a bunch of example data')
+    
+    args = parser.parse_args()
+    try:
+        locals()['ctest_' + args.tests]()
+    except KeyError:
+        logging.error('No such tests, check again')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        logging.error('Exception')
+

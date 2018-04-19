@@ -64,13 +64,13 @@ def collect_unloaded_dir(dirname):
     def inner(dirname):
 
         for file_full_path in glob_files(dirname):
-
             # if file_full_path.endswith('crs_wrk_check_list8.unl.gz'):
             #     continue
-            print('\nLoading {} '.format(file_full_path))
+            print 'Loading {} '.format(file_full_path),
             with gzip.open(file_full_path, 'rb') as read_file:
                 for line in read_file:
                     yield line
+                print('\n')
 
     return inner(dirname)
 
@@ -89,7 +89,6 @@ def collect_unloaded_file(filename):
 
 def chklines_collection(source):
     """
-
     parameter for the function
 
     Input: single row in the data dump file, i.e. '11096|C184|AUTH|UNTD|5195569|
@@ -99,7 +98,6 @@ Not enough information to calculate node POST SO 20083 (39247071)
 Node automatically rejected from the adjustment
 \
 
-\
 \
 '
      >>> len(list(match_line(source))
@@ -144,6 +142,7 @@ class Checklist_readlines():
 
         return True
 
+
 def unit_test2(file_path, code):
 
     for idx, line in  enumerate(collect_unloaded_file(file_path)):
@@ -171,6 +170,7 @@ def unit_test3(directory, code):
 
 
 def unit_test4(directory, code):
+
     check_fn = lambda line: line.find('|{}|'.format(code)) > 0
 
     for idx, line in enumerate((line for line in collect_unloaded_dir(directory) if check_fn(line))):
@@ -181,16 +181,6 @@ def unit_test4(directory, code):
                     # print sample.wrk_id, sample.chi_code, sample.exec_stag, sample.summary_txt[220:300]
     print idx
 
-def unit_test4(directory, code):
-    check_fn = lambda line: line.find('|{}|'.format(code)) > 0
-
-    for idx, line in enumerate((line for line in collect_unloaded_dir(directory) if check_fn(line))):
-        with Checklist_readlines(line) as row_object:
-            v = row_object.summary_txt[220:300]
-            # if not idx % 500:
-            print row_object.wrk_id, '<>', '\n'.join(row_object.summary_txt.splitlines()[:25])
-                    # print sample.wrk_id, sample.chi_code, sample.exec_stag, sample.summary_txt[220:300]
-    print idx
 
 def unit_test5(filename, code):
     check_fn = lambda line: line.find('|{}|'.format(code)) > 0
@@ -201,7 +191,8 @@ def unit_test5(filename, code):
                 assert re.search(r'SUMMARY OF REGULATION', row_object.summary_txt)
 
     assert idx == 4
-    print "All good"
+    print("All good")
+
 
 if __name__ == '__main__':
 
@@ -211,11 +202,6 @@ if __name__ == '__main__':
 
     unit_test5('./testdata/sample.log.gz', 'C184')
     # unit_test4(directory, 'C184')
-
     # unit_test3(directory, 'C184')
-
     # unit_test2(file_name, 'C184')
-
     # embed_test1(directory)
-            # if file_name == 'crs_wrk_check_list7.unl.gz':
-            #     break

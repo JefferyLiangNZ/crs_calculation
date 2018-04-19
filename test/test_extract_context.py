@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import division
 import pytest
 
-from extract_fields import extract_context, extract_context_testblock_title, extract_context_testblock
+from extract_fields import extract_context, extract_context_regtest_title, extract_context_testblock
 import re
 
 
@@ -101,6 +101,7 @@ Test: Reg 28 and 26.2.a.i: Misclose of obs between boundary marks
           Obs is from PEG DP 5284 (id 22288902) to PEG DEED 306 (id 22232881)\
 """
 
+
 @pytest.fixture(scope="module")
 def source_extract_context_testblock_title2():
 
@@ -112,15 +113,35 @@ Test: Reg 26.2.c.i: Relative accuracy of boundary marks
    The worst failures are:
 """
 
+
+@pytest.fixture(scope="module")
+def source_extract_context_testblock_title3():
+
+  return """\
+Testing regulations: Class 4 data against class 3 surveys
+
+Test: Reg 26.2.c.i: Relative accuracy of boundary marks
+   Tested for 24 observations of which 3 failed
+   The worst failures are:
+"""
+
+
 def test_extract_context_testblock_title(source_extract_context_testblock_title1):
-  res = extract_context_testblock_title(source_extract_context_testblock_title1)
+  res = extract_context_regtest_title(source_extract_context_testblock_title1, '')
   assert res[0] == '2002/2'
   assert res[1] == 'Information only - the Surveyor-General\'s Rules 2002/2 do not apply to this survey'
 
+
 def test_extract_context_testblock_title(source_extract_context_testblock_title2):
-  res = extract_context_testblock_title(source_extract_context_testblock_title2)
+  res = extract_context_regtest_title(source_extract_context_testblock_title2, '')
   assert res[0] == '1999-3'
   assert res[1] == '1999 Survey regulations for class 3 surveys'
+
+
+def test_extract_context_testblock_title(source_extract_context_testblock_title3):
+  res = extract_context_regtest_title(source_extract_context_testblock_title3, '2000')
+  assert res == ('2000-4', 'Class 4 data against class 3 surveys')
+
 
 @pytest.fixture(scope="module")
 def source_extract_context_testblock():
