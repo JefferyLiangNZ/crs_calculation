@@ -1,22 +1,25 @@
 
-# requirement(dependency)
+## requirement(dependency)
 Python 2.7.3 or above
 
-# To get your first aid
+## To get your first aid
 python main.py -h
 
-# to convert one data dump log(file)
+## to convert one data dump log(file)
 python main.py -f [logfile]
 
-# to convert a group of files under one directory
+## to convert a group of files under one directory
 python main.py -d [dirfile]
 
 
 
-# Verify. The output (*.sql files) should be found in the same directory of your program
-## wac_wrk_check_list.sql
-## wac_test_rule.sql
-## wac_test_rule_stats.sql
+## Verify. The output (*.sql files) should be found in the same directory of your program
+
+wac_wrk_check_list.sql
+
+wac_test_rule.sql
+
+wac_test_rule_stats.sql
 
 
 
