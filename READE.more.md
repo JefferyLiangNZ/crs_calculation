@@ -1,4 +1,4 @@
-READE.more.md
+READE.more.md(to see the content of this file, switch to 'RAW' mode)
 
 ## To run all the unit test:(if you are using py2.7)
 virtualenv env
