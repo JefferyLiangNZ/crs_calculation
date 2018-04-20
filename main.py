@@ -8,7 +8,7 @@ from calc_process import ( main_handler, wac_wrk_chk, wac_rule_test, wac_rule_te
 import argparse
 import logging
 import sys
-# format=' %(message)s'
+
 logging.basicConfig(format='%(asctime)s $ %(levelname)s $ %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='data_load.log',level=logging.DEBUG)
 
 def run_program(data_src, process_type = 'dir', user_criteria = None):
